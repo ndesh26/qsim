@@ -1,18 +1,19 @@
-From b56dc62f1908b6a65c46765c47ef66afb6b04008 Mon Sep 17 00:00:00 2001
+From 75746587c94d01a1b3beef61d2f01dde3e108c41 Mon Sep 17 00:00:00 2001
 From: Pranith Kumar <bobby.prani@gmail.com>
 Date: Tue, 8 Dec 2015 13:57:13 -0500
-Subject: [PATCH 1/1] Qsim specific changes to the linux kernel
+Subject: [PATCH] Qsim specific changes to the linux kernel
 
-* Enable qsim to track process pids
+* Enable qsim to track process pids and tids
 * Enable qsim to track CPU boot
 
 Signed-off-by: Pranith Kumar <bobby.prani@gmail.com>
+Signed-off-by: Nayan Deshmukh <nayan26deshmukh@gmail.com>
 ---
  arch/arm64/include/asm/mmu_context.h |  6 +++++-
  arch/arm64/kernel/smp.c              |  8 ++++++--
  arch/x86/kernel/smpboot.c            | 10 ++++++++++
- kernel/sched/core.c                  | 19 +++++++++++++++++++
- 4 files changed, 40 insertions(+), 3 deletions(-)
+ kernel/sched/core.c                  | 26 ++++++++++++++++++++++++++
+ 4 files changed, 47 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm64/include/asm/mmu_context.h b/arch/arm64/include/asm/mmu_context.h
 index 8ec41e5..a8ac574 100644
@@ -39,7 +40,7 @@ index 8ec41e5..a8ac574 100644
  #else
  static inline void contextidr_thread_switch(struct task_struct *next)
 diff --git a/arch/arm64/kernel/smp.c b/arch/arm64/kernel/smp.c
-index d3a202b..cfd98cf 100644
+index edf73a6..fa35c46 100644
 --- a/arch/arm64/kernel/smp.c
 +++ b/arch/arm64/kernel/smp.c
 @@ -76,10 +76,14 @@ enum ipi_msg_type {
@@ -93,10 +94,10 @@ index 50e547e..11af828 100644
  	atomic_set(&init_deasserted, 1);
  
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 4d870eb..0b304de 100644
+index 6cb5f00..7c88d44 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2293,6 +2293,16 @@
+@@ -2315,6 +2315,16 @@ asmlinkage __visible void schedule_tail(struct task_struct *prev)
  		put_user(task_pid_vnr(current), current->set_child_tid);
  }
  
@@ -113,7 +114,7 @@ index 4d870eb..0b304de 100644
  /*
   * context_switch - switch to the new MM and the new thread's register state.
   */
-@@ -2302,6 +2312,15 @@
+@@ -2324,6 +2334,22 @@ context_switch(struct rq *rq, struct task_struct *prev,
  {
  	struct mm_struct *mm, *oldmm;
  
@@ -122,13 +123,20 @@ index 4d870eb..0b304de 100644
 +	if (IS_ENABLED(CONFIG_X86) || IS_ENABLED(CONFIG_ARM64)) {
 +		if (next == rq->idle)
 +			do_cpuid(0x1d1e1d1e);
-+		else
-+			do_cpuid(0xc75c0000 | (u16)task_tgid_nr(next));
-+	}
++		else {
++                        uint32_t val = 0xc75c0000 | (u16)task_tgid_nr(next);
++#if defined(__aarch64__)
++	                asm volatile("msr pmcr_el0, %0" :: "r" (val));
++#else
++                        uint32_t tid = 0x00000000 | (u16)task_pid_nr(next);
++	                asm("cpuid;\n":: "a"(val), "b"(tid) : "%ecx", "%edx");
++#endif
++	        }
++        }
 +
  	prepare_task_switch(rq, prev, next);
  
  	mm = next->mm;
 -- 
-2.7.1
+1.9.1
 

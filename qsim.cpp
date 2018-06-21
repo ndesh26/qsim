@@ -365,11 +365,13 @@ Qsim::OSDomain::OSDomain(uint16_t n, string kernel_path, const string& cpu_type,
     // Set master CPU state to "running"
     running.push_back(true);
     tids.push_back(0);
+    thread_ids.push_back(0);
     idlevec.push_back(true);
     for (int i = 1; i < n_cpus; i++) {
       // Initialize Linux task ID to zero and idle to true
       running.push_back(false);
       tids.push_back(0);
+      thread_ids.push_back(0);
       idlevec.push_back(true);
     }
   }
@@ -448,6 +450,7 @@ void Qsim::OSDomain::init(const char* filename)
   for (int i = 0; i < n_cpus; i++) {
     running.push_back(true);
     tids.push_back(0);
+    thread_ids.push_back(0);
     idlevec.push_back(true);
   }
 
@@ -497,6 +500,11 @@ void Qsim::OSDomain::save_state(const char* filename) {
 int Qsim::OSDomain::get_tid(uint16_t i) {
   if (!running[i]) return -1;
   else return tids[i];
+}
+
+int Qsim::OSDomain::get_thread_id(uint16_t i) {
+  if (!running[i]) return -1;
+  else return thread_ids[i];
 }
 
 Qsim::OSDomain::cpu_mode Qsim::OSDomain::get_mode(uint16_t i) {
@@ -736,18 +744,18 @@ void Qsim::OSDomain::trans_cb(int cpu_id) {
     (**i)(cpu_id);
 }
 
-int Qsim::OSDomain::magic_cb_s(int cpu_id, uint64_t rax) {
-  return osdomains[cpu_id >> 16]->magic_cb(cpu_id & 0xffff, rax);
+int Qsim::OSDomain::magic_cb_s(int cpu_id, uint64_t rax, uint64_t rbx) {
+  return osdomains[cpu_id >> 16]->magic_cb(cpu_id & 0xffff, rax, rbx);
 }
 
-int Qsim::OSDomain::magic_cb(int cpu_id, uint64_t rax) {
+int Qsim::OSDomain::magic_cb(int cpu_id, uint64_t rax, uint64_t rbx) {
   int rval = 0;
 
   // Start by calling other registered magic instruction callbacks. 
   std::vector<magic_cb_obj_base*>::iterator i;
  
   for (i = magic_cbs.begin(); i != magic_cbs.end(); ++i)
-    if ((**i)(cpu_id, rax)) rval = 1;
+    if ((**i)(cpu_id, rax, rbx)) rval = 1;
 
   // If this is a "CD Ignore" magic instruction, ignore it.
   if ((rax&0xffff0000) == 0xcd160000) return rval;
@@ -773,6 +781,7 @@ int Qsim::OSDomain::magic_cb(int cpu_id, uint64_t rax) {
     // Context switch
     idlevec[cpu_id] = false;
     tids[cpu_id] = rax & 0xffff;
+    thread_ids[cpu_id] = rbx & 0xffff;
   } else if ( (rax & 0xffff0000) == 0xb0070000 ) {
     // CPU bootstrap
     running[rax&0xffff] = true;

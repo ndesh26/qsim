@@ -257,6 +257,7 @@ namespace Qsim {
 
     // Get the current mode, protection ring, or Linux task ID for CPU i
     int           get_tid (uint16_t i);
+    int           get_thread_id (uint16_t i);
     enum cpu_mode get_mode(uint16_t i);
     enum cpu_prot get_prot(uint16_t i);
 
@@ -319,7 +320,7 @@ namespace Qsim {
 
     struct magic_cb_obj_base {
       virtual ~magic_cb_obj_base() {}
-      virtual int operator()(int, uint64_t)=0;
+      virtual int operator()(int, uint64_t, uint64_t)=0;
     };
  
     struct io_cb_obj_base {
@@ -372,11 +373,11 @@ namespace Qsim {
     };
 
     template <typename T> struct magic_cb_obj : public magic_cb_obj_base {
-      typedef int (T::*magic_cb_t)(int, uint64_t);
+      typedef int (T::*magic_cb_t)(int, uint64_t, uint64_t);
       T* p; magic_cb_t f;
       magic_cb_obj(T* p, magic_cb_t f) : p(p), f(f) {}
-      int operator()(int cpu_id, uint64_t rax) {
-        return ((p)->*(f))(cpu_id, rax);
+      int operator()(int cpu_id, uint64_t rax, uint64_t rbx) {
+        return ((p)->*(f))(cpu_id, rax, rbx);
       }
     };
 
@@ -675,6 +676,7 @@ namespace Qsim {
     std::vector<QemuCpu*> cpus   ;       // Vector of CPU objects
     std::vector<bool>     idlevec;       // Whether CPU is in idle loop.
     std::vector<uint16_t> tids   ;       // Current tid of each CPU
+    std::vector<uint16_t> thread_ids;    // Current thread id of each CPU
     std::vector<bool>     running;       // Whether CPU is running.
 
     int (*app_start_cb)(int);  // Call this when the app starts running
@@ -684,9 +686,9 @@ namespace Qsim {
    
     unsigned ram_size_mb;
     
-    static int magic_cb_s(int cpu_id, uint64_t rax);
+    static int magic_cb_s(int cpu_id, uint64_t rax, uint64_t rbx);
     int waiting_for_eip;
-    int  magic_cb(int cpu_id, uint64_t rax);
+    int  magic_cb(int cpu_id, uint64_t rax, uint64_t rbx);
     static int atomic_cb_s(int cpu_id);
     int  atomic_cb(int cpu_id);
 

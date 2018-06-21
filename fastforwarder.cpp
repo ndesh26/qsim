@@ -26,7 +26,7 @@ struct Magic_cb_s {
 
   Qsim::OSDomain &osd;
 
-  int magic_cb_f(int cpu_id, uint64_t rax) {
+  int magic_cb_f(int cpu_id, uint64_t rax, uint64_t rbx) {
     if (rax == 0xaaaaaaaa) {
       app_started = true;
       return 1;

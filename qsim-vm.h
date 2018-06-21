@@ -46,7 +46,7 @@ typedef uint32_t* (*io_cb_t) (int cpu_id, uint64_t addr, uint8_t size,
                               int type, uint32_t val);
 
 typedef int (*int_cb_t)(int cpu_id, uint8_t  vector);
-typedef int (*magic_cb_t) (int cpu_id, uint64_t rax);
+typedef int (*magic_cb_t) (int cpu_id, uint64_t rax, uint64_t rbx);
 typedef int (*atomic_cb_t)(int cpu_id);
 typedef void (*reg_cb_t)(int cpu_id, int reg, uint8_t  val, int type);
 typedef void (*trans_cb_t)(int cpu_id);

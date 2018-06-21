@@ -57,7 +57,7 @@ private:
     return 1;
   }
 
-  int magic_cb(int c, uint64_t rax) {
+  int magic_cb(int c, uint64_t rax, uint64_t rbx) {
 
     static int addr_reg, size_reg, ready_reg;
 
