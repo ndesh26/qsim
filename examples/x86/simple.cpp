@@ -62,7 +62,8 @@ public:
     distorm_decode(0, b, l, Decode64Bits, inst, 15, &shouldBeOne);
 
     tracefile << std::dec << c << ": Inst@(0x" << std::hex << v << "/0x" << p 
-              << ", tid=" << std::dec << osd.get_tid(c) << ", "
+              << ", pid=" << std::dec << osd.get_tid(c) << ", "
+              << ", tid=" << std::dec << osd.get_thread_id(c) << ", "
               << ((osd.get_prot(c) == Qsim::OSDomain::PROT_USER)?"USR":"KRN")
               << (osd.idle(c)?"[IDLE]":"[ACTIVE]")
               << "): " << std::hex;
