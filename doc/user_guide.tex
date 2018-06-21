@@ -706,8 +706,16 @@ false otherwise.
     int get_tid(uint16_t i);
 \end{verbatim}
 
-If Linux has booted, returns the task ID of the thread currently running on CPU
+If Linux has booted, returns the task ID of the process currently running on CPU
 \texttt{i}. Otherwise returns $-1$.
+
+\label{func:get_thread_id} \begin{verbatim}
+    int get_tid(uint16_t i);
+\end{verbatim}
+
+If Linux has booted, returns the thread ID of the thread currently running on CPU
+\texttt{i}. Otherwise returns $-1$.
+
 
 \label{func:get_mode} \begin{verbatim}
     enum cpu_mode get_mode(uint16_t i);
